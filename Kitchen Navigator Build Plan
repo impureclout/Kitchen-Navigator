@@ -1,0 +1,244 @@
+Kitchen Navigator Application: Detailed Project Plan (MVP for Investment)
+Project Goal: Develop a Minimum Viable Product (MVP) of Kitchen Navigator, a web-based application that allows restaurant owners to generate menus based on available ingredients, designed to secure investment for future development and scaling.
+
+Monetization Strategy: Monthly Subscription Model.
+
+Key Differentiator (MVP): Demonstrates core logic of ingredient-based recipe matching with a curated mock database, showcasing potential without upfront API costs.
+
+Phase 0: Project Setup & Foundation (Estimated: 2-3 Days)
+Objective: Establish the development environment, version control, and initial project structure.
+
+Repository Setup:
+
+Create a Git repository (e.g., on GitHub, GitLab).
+Initialize frontend and backend directories.
+Set up .gitignore files for sensitive data and build artifacts.
+Technology Stack Installation:
+
+Node.js & npm/Yarn: Install on your development machine.
+Frontend Framework (React.js):
+npx create-react-app frontend (or similar for Vue/Angular).
+Install necessary dependencies (e.g., Axios for API calls, a UI library like Tailwind CSS or Material-UI if desired).
+Backend Framework (Node.js with Express.js):
+npm init -y in the backend directory.
+npm install express bcryptjs jsonwebtoken cors dotenv pg (if using PostgreSQL)
+bcryptjs: For password hashing.
+jsonwebtoken: For authentication (optional, but good for robust MVP).
+cors: To handle cross-origin requests between frontend and backend.
+dotenv: For environment variables.
+pg: PostgreSQL client library (if using PostgreSQL).
+Database (PostgreSQL - Recommended):
+Install PostgreSQL on your local machine or set up a free tier cloud instance (e.g., Render, Railway, Neon for serverless PostgreSQL).
+Install a GUI tool like DBeaver or PgAdmin for database management.
+Cursor IDE: Ensure Cursor is configured to work with your chosen languages and frameworks.
+Initial Folder Structure & Basic Files:
+
+frontend/:
+src/: Main source code for React app.
+public/: HTML template, static assets.
+backend/:
+server.js (or app.js): Main Express application file.
+routes/: Directory for API route definitions (e.g., auth.js, recipes.js).
+controllers/: Directory for handling request logic (e.g., authController.js, recipeController.js).
+models/: Directory for database interaction (e.g., userModel.js).
+db/: Directory for database connection setup (e.g., db.js, schema.sql).
+data/: Crucial for MVP - mockRecipes.json, alwaysAvailableIngredients.json.
+.env: Environment variables (e.g., database connection string, JWT secret).
+Phase 1: User Authentication & Subscription Foundation (Estimated: 5-7 Days)
+Objective: Implement secure user registration, login, and the foundational database structure for subscription management.
+
+Database Schema Design (backend/db/schema.sql):
+
+users table:
+id (PRIMARY KEY, UUID or SERIAL)
+email (VARCHAR(255) UNIQUE, NOT NULL)
+password_hash (VARCHAR(255) NOT NULL)
+created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+updated_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+subscriptions table:
+id (PRIMARY KEY, UUID or SERIAL)
+payment_processor_sub_id (VARCHAR(255) UNIQUE, NULL) - Placeholder for future Stripe/PayPal subscription ID.
+payment_processor_customer_id (VARCHAR(255) UNIQUE, NULL) - Placeholder for future Stripe/PayPal customer ID.
+plan_tier (VARCHAR(50) NOT NULL, e.g., 'monthly_pro', 'monthly_basic') - Can be hardcoded for MVP.
+start_date (DATE NOT NULL)
+end_date (DATE NULL) - Will be null if subscription is indefinite, or set for fixed-term subs.
+is_active (BOOLEAN DEFAULT TRUE)
+created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+updated_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+Connect backend/db/db.js to the PostgreSQL database.
+Backend API Development (backend/routes/auth.js, backend/controllers/authController.js):
+
+User Registration (POST /api/auth/register):
+Input: email, password.
+Validation: Email format, password strength (e.g., min length).
+Password Hashing: Use bcryptjs.hash() to hash the password before storing.
+Database Insertion: Insert new user into the users table.
+Response: Success message or error.
+User Login (POST /api/auth/login):
+Input: email, password.
+Fetch User: Retrieve user by email from users table.
+Password Comparison: Use bcryptjs.compare() to compare input password with hashed password.
+Token Generation (Optional for MVP, but good for investor demo): If successful, generate a JWT (jsonwebtoken) containing user_id and email.
+Response: Success with token (if applicable) or error.
+Subscription Check (Dummy for MVP):
+A simple function checkSubscriptionStatus(userId) that always returns true for MVP, or checks the is_active flag in your subscriptions table. This will be integrated into protected routes later.
+Frontend Authentication UI (frontend/src/components/Auth/):
+
+Registration Form:
+Input fields for email and password.
+Client-side validation (basic).
+Call to POST /api/auth/register endpoint.
+Display success/error messages.
+Login Form:
+Input fields for email and password.
+Call to POST /api/auth/login endpoint.
+Store received JWT (if applicable) in localStorage (for simplicity in MVP, but production usually prefers httpOnly cookies).
+Redirect to the main Kitchen Navigator application dashboard upon successful login.
+Protected Routes (Basic): Implement a simple check (e.g., if (!localStorage.getItem('token')) { redirectToLogin(); }) on routes that require authentication.
+Phase 2: Mock Recipe Data & Ingredient Filtering Engine (Estimated: 6-8 Days)
+Objective: Create the internal mock recipe database and develop the core logic for matching user ingredients to recipes.
+
+Define "Always Available" Ingredients (backend/data/alwaysAvailableIngredients.json):
+
+Create a JSON array of common pantry staples/spices.
+Examples: "salt", "black pepper", "olive oil", "garlic", "onion", "sugar", "flour", "water", "butter", "cumin", "paprika", "oregano", "thyme", "basil", "soy sauce", "vinegar (white)", "vinegar (red wine)", "eggs", "milk".
+This list needs to be easily expandable.
+Curate Mock Recipe Database (backend/data/mockRecipes.json):
+
+Manual Creation: Hand-pick 30-50 diverse recipes from public domain sources or create them yourself.
+Strict JSON Structure: Each recipe must adhere to a consistent JSON object structure:
+JSON
+
+{
+  "id": "unique_recipe_id_1",
+  "name": "Dish Name Example",
+  "description": "A brief, appealing description of the dish.",
+  "ingredients": [
+    "ingredient 1 (e.g., 'chicken breast')",
+    "ingredient 2 (e.g., 'broccoli')",
+    "ingredient 3 (e.g., 'garlic')",
+    "ingredient 4 (e.g., 'soy sauce')"
+  ],
+  "instructions": [
+    "Step 1: Description of first step.",
+    "Step 2: Description of second step."
+  ],
+  "prepTime": "15 mins",
+  "cookTime": "25 mins",
+  "yield": "4 servings",
+  "imageUrl": "https://example.com/path/to/image.jpg" // Use placeholder images for MVP
+}
+Ingredient Naming Consistency: Use consistent, singular, lowercase names for ingredients within your mock recipes (e.g., always "chicken breast", not "chicken breasts" or "chicken"). This is critical for matching.
+Backend Recipe Matching Logic (backend/routes/recipes.js, backend/controllers/recipeController.js):
+
+Load Data: On server start, load mockRecipes.json and alwaysAvailableIngredients.json into memory.
+Endpoint (POST /api/recipes/generate):
+Input: An array of strings representing the user's available ingredients (e.g., ["chicken", "rice", "carrot"]).
+Middleware (Optional but recommended): Implement an authentication middleware to ensure only logged-in (and subscribed - future) users can access this endpoint.
+Processing:
+Normalize User Ingredients: Convert all user-provided ingredients to lowercase for case-insensitive matching.
+Filter User Ingredients: Remove any ingredient from the user's list that is found in the alwaysAvailableIngredients.json list.
+Iterate & Match: Loop through each recipe in mockRecipes.json.
+Recipe Ingredient Check: For each recipe, iterate through its ingredients list:
+Convert the recipe ingredient to lowercase.
+If the recipe ingredient is not in alwaysAvailableIngredients.json:
+Check if it is present in the user's filtered ingredient list.
+If any non-staple recipe ingredient is not found in the user's list, discard this recipe.
+Collect Matches: If all non-staple recipe ingredients are found, add the recipe to a matchingRecipes array.
+Response: Return the matchingRecipes array to the frontend.
+Frontend Ingredient Input & Display (frontend/src/components/IngredientInput/, frontend/src/components/RecipeResults/):
+
+Ingredient Input Component:
+Text input field for users to type ingredients.
+Add/remove buttons for ingredients.
+Display current list of user-entered ingredients.
+"Generate Dishes" Button: Triggers an API call to POST /api/recipes/generate with the user's ingredients.
+Recipe Results Component:
+Display the list of matching dish names and short descriptions received from the backend.
+Each dish should be clickable to reveal more details (next phase).
+Loading spinner/state while waiting for API response.
+Message if no recipes are found.
+Phase 3: Dish Selection, Recipe Preview & Menu Builder (Estimated: 7-9 Days)
+Objective: Enable users to browse, preview, and select dishes to build their custom menu.
+
+Frontend Recipe Preview (frontend/src/components/RecipeDetailsModal/):
+
+When a user clicks on a dish from the RecipeResults list:
+Display a modal or a dedicated side panel.
+Populate it with:
+Dish Name, Description.
+Full Ingredients List (consider visually differentiating "available" vs. "always available" if possible).
+Detailed Instructions.
+Prep Time, Cook Time, Yield.
+Recipe Image.
+"Add to Menu" Button: On the recipe preview, allow adding the dish to a temporary "Current Menu" state.
+Frontend Current Menu Management (frontend/src/components/CurrentMenu/):
+
+A persistent UI element (e.g., a sidebar or dedicated section) displaying the dishes currently selected for the menu.
+Functionality:
+List selected dish names.
+"Remove" button next to each dish.
+"Reorder" functionality (drag-and-drop or up/down arrows).
+Input fields for overall menu title (e.g., "Dinner Specials - July 2025").
+Backend (Minor Update):
+
+No new endpoints needed here, as menu selection is primarily a frontend state management task for the MVP. The backend just provides the recipes.
+Phase 4: Menu & Recipe Output/Printing (Estimated: 4-6 Days)
+Objective: Enable users to generate and print formatted menus and accompanying recipe lists.
+
+Frontend Menu Generation (frontend/src/components/MenuOutput/):
+
+"Generate Printable Menu" Button:
+Takes the selected dishes from the "Current Menu" state.
+Composes an HTML structure resembling a restaurant menu.
+Includes menu title, dish names, descriptions.
+CSS Styling: Apply clean, print-friendly CSS.
+Print Functionality: Use window.print() to open the browser's print dialog for the generated HTML.
+"Generate Recipe List" Button:
+Takes the selected dishes and their full recipe details.
+Composes an HTML structure listing each recipe clearly (name, ingredients, instructions, times).
+CSS Styling: Apply clean, print-friendly CSS.
+Print Functionality: Use window.print().
+PDF Generation (Optional for MVP, but highly impactful for investor demo):
+
+While window.print() works, generating a PDF is more professional for sharing.
+Libraries:
+Frontend-based (e.g., jspdf, html2canvas): Can convert HTML to PDF directly in the browser. May have formatting limitations.
+Backend-based (e.g., Puppeteer with Node.js, reportlab with Python): More robust and consistent PDF generation. The backend would receive the menu/recipe data, render it internally (perhaps headless browser), and return a PDF file.
+Recommendation for MVP: Start with window.print(). If time permits and you want to impress, explore jspdf for a frontend solution first. Backend PDF generation is more complex.
+Phase 5: Polish, Testing, & Investment Readiness (Estimated: 3-5 Days)
+Objective: Refine the application, ensure stability, and prepare materials for investor presentation.
+
+User Interface (UI) / User Experience (UX) Refinement:
+Ensure consistent styling throughout.
+Improve responsiveness for different screen sizes.
+Add clear error messages, loading indicators, and success notifications.
+Enhance navigation and overall flow.
+Input Validation:
+Strengthen frontend and backend validation for all user inputs (e.g., email format, ingredient length).
+Error Handling:
+Implement robust error handling on both frontend and backend for API calls and unexpected issues.
+Dummy Subscription Workflow:
+On user registration/login, automatically mark their dummy subscription as "active" in the subscriptions table for MVP.
+Implement a simple "Subscription Status" display for the user.
+Testing:
+Manual Testing: Test all features thoroughly from a user's perspective.
+Edge Cases: Test with empty ingredient lists, very specific ingredients, no matching recipes, etc.
+Code Review & Documentation:
+Clean up code, add comments where necessary.
+Write a README.md file for the project explaining setup, running instructions, and features.
+Prepare for Demonstration:
+Create a compelling demo script.
+Have a few pre-defined ingredient lists ready to showcase different menu possibilities.
+Be ready to explain the future vision (scaling with real APIs, advanced features).
+Future Enhancements (Post-Investment)
+Real Recipe API Integration: Transition from mock database to paid APIs (Spoonacular, Edamam, etc.).
+Payment Gateway Integration: Implement Stripe/PayPal for actual subscription management.
+User Saved Menus & Recipes: Allow users to save their generated menus and favorite recipes.
+Dietary Filters: Add options for vegetarian, vegan, gluten-free, etc.
+Cuisine Filters: Filter by Italian, Mexican, Asian, etc.
+Costing & Pricing: Allow input of ingredient costs and generate menu prices.
+Inventory Management: Track ingredient quantities.
+Shopping List Generation: Generate shopping lists based on selected menu items.
+Scalability: Optimize database queries, consider caching.
+Admin Dashboard: For managing users, subscriptions, and potentially the "always available" ingredient list.
